@@ -4,7 +4,7 @@ class RadioGaga < Formula
   desc "Radio Gaga - Terminal User Interface for Radio Streaming"
   homepage "https://github.com/githubpoet/radio-gaga"
   url "https://github.com/githubpoet/radio-gaga/archive/v1.0.0.tar.gz"
-  sha256 "REPLACE_WITH_ACTUAL_SHA256"  # This will be calculated after you create a release
+  sha256 "7eb6207e6130aa7c39b3ea9618f5ee78163958bdbbb08c52460e7bbf42f025db"
   license "MIT"
 
   depends_on "python@3.11"
