@@ -2,8 +2,8 @@ class RadioGaga < Formula
   include Language::Python::Virtualenv
 
   desc "Radio Gaga - Terminal User Interface for Radio Streaming"
-  homepage "https://github.com/githubpoet/radio-tui"
-  url "https://github.com/githubpoet/radio-tui/archive/v1.0.0.tar.gz"
+  homepage "https://github.com/githubpoet/radio-gaga"
+  url "https://github.com/githubpoet/radio-gaga/archive/v1.0.0.tar.gz"
   sha256 "REPLACE_WITH_ACTUAL_SHA256"  # This will be calculated after you create a release
   license "MIT"
 

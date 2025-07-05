@@ -22,7 +22,7 @@ setup(
     long_description_content_type="text/markdown",
     author="sk",
     author_email="sk@example.com", 
-    url="https://github.com/githubpoet/radio-tui",
+    url="https://github.com/githubpoet/radio-gaga",
     packages=find_packages(),
     py_modules=['radio', 'config', 'tui'],
     python_requires=">=3.7",
