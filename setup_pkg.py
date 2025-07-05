@@ -15,9 +15,9 @@ else:
     long_description = "A Terminal User Interface for Radio Streaming"
 
 setup(
-    name="radio-tui",
+    name="radio-gaga",
     version="1.0.0",
-    description="A Terminal User Interface for Radio Streaming",
+    description="Radio Gaga - A Terminal User Interface for Radio Streaming",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="sk",
@@ -32,7 +32,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'radio-tui=radio:main',
+            'radio-gaga=radio:main',
         ],
     },
     classifiers=[

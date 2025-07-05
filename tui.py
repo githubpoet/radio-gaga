@@ -40,7 +40,7 @@ def radio_tui(stdscr):
         height, width = stdscr.getmaxyx()
         
         # Draw header
-        title = "Radio TUI"
+        title = "Radio Gaga"
         instructions = "↑/↓ or 1-9: Navigate | Space/Enter: Play/Stop | Q: Quit"
         
         stdscr.addstr(0, (width - len(title)) // 2, title, curses.color_pair(4) | curses.A_BOLD)

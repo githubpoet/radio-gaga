@@ -3,6 +3,8 @@ streams:
     url: https://stream-relay-geo.ntslive.net/stream
   - name: NTS2
     url: https://stream-relay-geo.ntslive.net/stream2
+  - name: GDS.FM
+    url: http://gdsfm.out.airtime.pro:8000/gdsfm_a
 defaults:
   volume: 1.0
   start_paused: true

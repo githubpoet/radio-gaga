@@ -1,4 +1,4 @@
-# Radio TUI
+# Radio Gaga
 
 A terminal-based radio streaming application with a curses-based user interface.
 
@@ -18,7 +18,7 @@ A terminal-based radio streaming application with a curses-based user interface.
 The terminal interface displays:
 
 ```
-                           Radio TUI
+                           Radio Gaga
         ↑/↓ or 1-9: Navigate | Space/Enter: Play/Stop | Q: Quit
 ────────────────────────────────────────────────────────────────
 

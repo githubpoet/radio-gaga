@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Radio TUI - A Terminal User Interface for Radio Streaming
+Radio Gaga - A Terminal User Interface for Radio Streaming
 """
 
 import sys
@@ -14,7 +14,7 @@ from tui import main as tui_main
 def main():
     """Main entry point for the radio TUI application."""
     parser = argparse.ArgumentParser(
-        description="Radio TUI - Terminal-based Radio Streaming",
+        description="Radio Gaga - Terminal-based Radio Streaming",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
   %(prog)s                    # Start interactive TUI
@@ -104,7 +104,7 @@ def main():
     
     elif args.cli:
         # Command-line interface for testing/debugging
-        print("Radio TUI - Terminal-based Radio Streaming")
+        print("Radio Gaga - Terminal-based Radio Streaming")
         print("="*40)
         
         print(f"\nAvailable streams ({len(streams)}):")
@@ -125,7 +125,7 @@ def main():
         print("  - switch(id): Switch to different stream")
         print("  - status(): Get current playback status")
         
-        print("\n[Use 'python radio.py' without --cli flag to start the TUI]")
+        print("\n[Use 'python radio.py' without --cli flag to start Radio Gaga TUI]")
     else:
         # Start the TUI
         try:
