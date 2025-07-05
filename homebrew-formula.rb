@@ -2,8 +2,8 @@ class RadioTui < Formula
   include Language::Python::Virtualenv
 
   desc "Terminal User Interface for Radio Streaming"
-  homepage "https://github.com/yourusername/radio-tui"  # Replace with your GitHub URL
-  url "https://github.com/yourusername/radio-tui/archive/v1.0.0.tar.gz"  # Replace with your release URL
+  homepage "https://github.com/githubpoet/radio-tui"
+  url "https://github.com/githubpoet/radio-tui/archive/v1.0.0.tar.gz"
   sha256 "REPLACE_WITH_ACTUAL_SHA256"  # This will be calculated after you create a release
   license "MIT"
 
