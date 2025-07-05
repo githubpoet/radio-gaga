@@ -48,6 +48,14 @@ coverage.xml
 *.mo
 *.pot
 
+# Logs
+*.log
+debug.log
+
+# Backups
+tui_backup.py
+tui_old.py
+
 # Django stuff:
 *.log
 local_settings.py

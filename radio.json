@@ -1,0 +1,16 @@
+{
+  "streams": [
+    {
+      "name": "NTS1",
+      "url": "https://stream-relay-geo.ntslive.net/stream"
+    },
+    {
+      "name": "NTS2",
+      "url": "https://stream-relay-geo.ntslive.net/stream2"
+    }
+  ],
+  "defaults": {
+    "volume": 1.0,
+    "start_paused": true
+  }
+}
