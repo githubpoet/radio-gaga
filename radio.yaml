@@ -1,0 +1,30 @@
+---
+# Radio TUI Configuration File
+app:
+  name: "Radio TUI"
+  version: "0.1.0"
+  
+# Radio stations configuration
+stations:
+  - name: "Example Jazz Station"
+    url: "http://example.com/jazz"
+    genre: "jazz"
+    
+  - name: "Example Rock Station"
+    url: "http://example.com/rock"
+    genre: "rock"
+    
+  - name: "Example Classical Station"
+    url: "http://example.com/classical"
+    genre: "classical"
+
+# UI Settings
+ui:
+  theme: "default"
+  show_visualizer: true
+  show_metadata: true
+  
+# Audio settings
+audio:
+  volume: 75
+  buffer_size: 1024
