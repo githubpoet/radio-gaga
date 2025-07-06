@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Configuration module for Radio TUI
+Configuration Resolution Helper API for Radio Gaga
 
 This module provides a comprehensive configuration resolution system that:
 1. Accepts explicit absolute/relative paths from CLI flags
@@ -15,15 +15,15 @@ Key Features:
 - Cross-platform path resolution
 - Lazy loading with smart caching
 - Comprehensive error handling
-- Backward compatibility with legacy API
 """
 
-import json
 import os
+import sys
 import platform
 from pathlib import Path
+from typing import Dict, Any, Optional, Union
+import json
 import shutil
-from typing import Dict, Any, Optional, Union, Tuple
 
 try:
     import yaml
@@ -31,18 +31,7 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-# Import resources for Python 3.7+ compatibility
-try:
-    from importlib import resources
-except ImportError:
-    # Fallback for Python < 3.9
-    import importlib_resources as resources
-
-# Cache for loaded configuration
-_config_cache: Optional[Dict[str, Any]] = None
-_config_path_cache: Optional[Path] = None
-
-# Default configuration
+# Default configuration structure
 DEFAULT_CONFIG = {
     "streams": [
         {
@@ -62,51 +51,23 @@ DEFAULT_CONFIG = {
 
 # Configuration file template with comments
 CONFIG_TEMPLATE = """# Radio Gaga Configuration File
-# ==============================
-#
-# This file contains stream definitions and default application settings.
-# Radio Gaga supports both YAML (.yaml, .yml) and JSON (.json) formats.
-#
-# Configuration Resolution Order:
-# 1. Explicit --config CLI argument
-# 2. RADIO_GAGA_CONFIG environment variable
-# 3. Platform-specific directories:
-#    - Linux: ~/.config/radio-gaga/radio.yaml
-#    - macOS: ~/Library/Application Support/radio-gaga/radio.yaml
-#    - Windows: %APPDATA%/radio-gaga/radio.yaml
-# 4. Current directory: ./radio.yaml or ./radio.json
-# 5. Packaged defaults
+# This file contains stream definitions and default settings
 
-# Stream Definitions
-# ------------------
-# Each stream requires 'name' (display name) and 'url' (stream endpoint)
+# Available radio streams
 streams:
-  - name: NTS1                                    # Primary NTS channel
+  - name: NTS1
     url: https://stream-relay-geo.ntslive.net/stream
-  - name: NTS2                                    # Secondary NTS channel
+  - name: NTS2
     url: https://stream-relay-geo.ntslive.net/stream2
-  
   # Add more streams here:
-  # - name: "Your Stream Name"                    # Display name in TUI
-  #   url: "https://your-stream-url.com/stream"   # HTTP/HTTPS stream URL
+  # - name: Your Stream
+  #   url: https://your-stream-url.com/stream
 
-# Default Application Settings
-# ----------------------------
-# Optional settings that control application behavior
+# Default application settings
 defaults:
-  volume: 1.0          # Default volume level (0.0 to 1.0)
-  start_paused: true   # Whether to start in paused state (true/false)
-
-# Configuration Notes:
-# - Stream names should be unique and are case-sensitive
-# - URLs must be accessible HTTP/HTTPS streaming endpoints
-# - Use 'python config.py --info' to debug configuration resolution
-# - Environment variables: RADIO_GAGA_CONFIG, DEBUG, LOG_LEVEL, UPDATE_INTERVAL
+  volume: 1.0          # Default volume (0.0 to 1.0)
+  start_paused: true   # Whether to start in paused state
 """
-
-class ConfigError(Exception):
-    """Custom exception for configuration errors."""
-    pass
 
 class ConfigurationError(Exception):
     """
@@ -121,7 +82,7 @@ class ConfigurationError(Exception):
         self.search_paths = search_paths or []
         self.original_error = original_error
         
-    def __str__(self) -> str:
+    def __str__(self):
         msg = super().__str__()
         if self.search_paths:
             msg += f"\n\nSearched paths:\n"
@@ -132,7 +93,7 @@ class ConfigurationError(Exception):
         return msg
 
 
-def get_platform_config_dir() -> Path:
+def _get_platform_config_dir() -> Path:
     """
     Get the platform-specific configuration directory.
     
@@ -167,7 +128,7 @@ def get_platform_config_dir() -> Path:
         return home / ".config" / "radio-gaga"
 
 
-def get_packaged_config_path() -> Path:
+def _get_packaged_config_path() -> Path:
     """
     Get the path to the packaged default configuration file.
     
@@ -176,49 +137,6 @@ def get_packaged_config_path() -> Path:
     """
     app_dir = Path(__file__).parent
     return app_dir / "radio.yaml"
-
-
-def load_packaged_template() -> str:
-    """
-    Load the packaged default configuration template.
-    
-    Returns:
-        str: The template content from radio_default.yaml
-        
-    Raises:
-        ConfigurationError: If the template cannot be loaded
-    """
-    try:
-        # For py_modules setup, try to load from the package where config module is located
-        try:
-            # For Python 3.9+
-            import config as config_module
-            config_package_path = Path(config_module.__file__).parent
-            template_path = config_package_path / "radio_default.yaml"
-            if template_path.exists():
-                return template_path.read_text(encoding="utf-8")
-            
-            # Try using importlib.resources with the current module's package
-            template_content = resources.files(__name__.split('.')[0]).joinpath("radio_default.yaml").read_text(encoding="utf-8")
-        except (AttributeError, FileNotFoundError):
-            # For Python 3.7-3.8 compatibility or if files() doesn't work
-            try:
-                with resources.path(__name__.split('.')[0], "radio_default.yaml") as template_path:
-                    template_content = template_path.read_text(encoding="utf-8")
-            except (FileNotFoundError, ModuleNotFoundError):
-                # Try direct file access as fallback
-                config_dir = Path(__file__).parent
-                template_path = config_dir / "radio_default.yaml"
-                if template_path.exists():
-                    template_content = template_path.read_text(encoding="utf-8")
-                else:
-                    raise FileNotFoundError("Template not found")
-        
-        return template_content
-        
-    except Exception as e:
-        # Fallback to the hard-coded template if package resource fails
-        return CONFIG_TEMPLATE
 
 
 def get_config_path(cli_arg: Optional[str] = None) -> Path:
@@ -259,7 +177,7 @@ def get_config_path(cli_arg: Optional[str] = None) -> Path:
             return env_path
     
     # 3. Platform-specific user directories
-    platform_dir = get_platform_config_dir()
+    platform_dir = _get_platform_config_dir()
     platform_yaml = platform_dir / "radio.yaml"
     platform_json = platform_dir / "radio.json"
     
@@ -281,7 +199,7 @@ def get_config_path(cli_arg: Optional[str] = None) -> Path:
         return legacy_json
     
     # 5. Packaged defaults
-    packaged_config = get_packaged_config_path()
+    packaged_config = _get_packaged_config_path()
     search_paths.append(str(packaged_config))
     if packaged_config.exists():
         return packaged_config
@@ -293,7 +211,7 @@ def get_config_path(cli_arg: Optional[str] = None) -> Path:
     )
 
 
-def load_config_from_path(path: Path) -> Dict[str, Any]:
+def load_config(path: Path) -> Dict[str, Any]:
     """
     Load configuration from the specified path.
     
@@ -386,17 +304,12 @@ def ensure_user_default() -> Path:
     Raises:
         ConfigurationError: If user config directory cannot be created
     """
-    platform_dir = get_platform_config_dir()
+    platform_dir = _get_platform_config_dir()
     config_path = platform_dir / "radio.yaml"
     
     # If config already exists, return its path
     if config_path.exists():
         return config_path
-    
-    # Also check for JSON version
-    json_path = platform_dir / "radio.json"
-    if json_path.exists():
-        return json_path
     
     # Create directory if it doesn't exist
     try:
@@ -407,31 +320,21 @@ def ensure_user_default() -> Path:
             original_error=e
         )
     
-    # Create the configuration file with template atomically
-    temp_path = config_path.with_suffix('.tmp')
+    # Create the configuration file with template
     try:
-        # Load template from package resources
-        template_content = load_packaged_template()
-        
-        with open(temp_path, 'w', encoding='utf-8') as f:
-            f.write(template_content)
-        
-        # Atomic move to final location
-        temp_path.replace(config_path)
+        with open(config_path, 'w', encoding='utf-8') as f:
+            f.write(CONFIG_TEMPLATE)
         
         return config_path
         
     except IOError as e:
-        # Clean up temp file if it exists
-        if temp_path.exists():
-            temp_path.unlink()
         raise ConfigurationError(
             f"Could not create configuration file: {config_path}",
             original_error=e
         )
 
 
-def resolve_and_load_config(cli_arg: Optional[str] = None) -> Tuple[Path, Dict[str, Any]]:
+def resolve_and_load_config(cli_arg: Optional[str] = None) -> tuple[Path, Dict[str, Any]]:
     """
     High-level function to resolve and load configuration.
     
@@ -467,97 +370,15 @@ def resolve_and_load_config(cli_arg: Optional[str] = None) -> Tuple[Path, Dict[s
     
     # Load the configuration
     try:
-        config = load_config_from_path(config_path)
+        config = load_config(config_path)
         return config_path, config
     except ConfigurationError as e:
         # If the resolved config can't be loaded, try fallback to defaults
-        if config_path == get_packaged_config_path():
+        if config_path == _get_packaged_config_path():
             # If even the packaged config fails, use hard-coded defaults
             return Path("<default>"), DEFAULT_CONFIG
         else:
             raise
-
-
-# New API functions
-
-def load_config(cli_arg: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Load configuration using the new helper API.
-    
-    This is the main entry point for loading configuration. It handles
-    path resolution, platform detection, and fallback to defaults.
-    
-    Args:
-        cli_arg: Optional explicit path from CLI argument
-        
-    Returns:
-        dict: Configuration dictionary containing streams and defaults
-    """
-    global _config_cache, _config_path_cache
-    
-    # Return cached configuration if available and no CLI arg provided
-    if _config_cache is not None and cli_arg is None:
-        return _config_cache
-    
-    try:
-        config_path, config = resolve_and_load_config(cli_arg)
-        
-        # Cache the results
-        _config_cache = config
-        _config_path_cache = config_path
-        
-        return config
-        
-    except ConfigurationError as e:
-        # Fallback to defaults and print warning
-        print(f"Warning: {e}")
-        print("Using built-in default configuration...")
-        
-        _config_cache = DEFAULT_CONFIG
-        _config_path_cache = Path("<default>")
-        
-        return DEFAULT_CONFIG
-
-
-def get_streams() -> list:
-    """
-    Get list of available streams from configuration.
-    
-    Returns:
-        list: List of stream dictionaries
-    """
-    config = load_config()
-    return config.get("streams", [])
-
-
-def get_defaults() -> dict:
-    """
-    Get default settings from configuration.
-    
-    Returns:
-        dict: Default settings dictionary
-    """
-    config = load_config()
-    return config.get("defaults", {})
-
-
-# Legacy API functions for backward compatibility
-
-def save_default_config(path: Path) -> None:
-    """
-    Save the default configuration to a JSON file.
-    
-    This is a legacy function maintained for backward compatibility.
-    
-    Args:
-        path: The path to the config file to save
-    """
-    try:
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(DEFAULT_CONFIG, f, indent=4)
-            print(f"Default configuration saved to {path}")
-    except Exception as e:
-        print(f"Failed to save default configuration: {e}")
 
 
 def get_config_info(cli_arg: Optional[str] = None) -> Dict[str, Any]:
@@ -574,8 +395,8 @@ def get_config_info(cli_arg: Optional[str] = None) -> Dict[str, Any]:
     """
     info = {
         "platform": platform.system(),
-        "platform_config_dir": str(get_platform_config_dir()),
-        "packaged_config_path": str(get_packaged_config_path()),
+        "platform_config_dir": str(_get_platform_config_dir()),
+        "packaged_config_path": str(_get_packaged_config_path()),
         "environment_variable": os.environ.get("RADIO_GAGA_CONFIG"),
         "cli_argument": cli_arg,
         "search_paths": [],
@@ -595,7 +416,7 @@ def get_config_info(cli_arg: Optional[str] = None) -> Dict[str, Any]:
     if env_config:
         search_paths.append(str(Path(env_config).expanduser().resolve()))
     
-    platform_dir = get_platform_config_dir()
+    platform_dir = _get_platform_config_dir()
     search_paths.extend([
         str(platform_dir / "radio.yaml"),
         str(platform_dir / "radio.json")
@@ -607,7 +428,7 @@ def get_config_info(cli_arg: Optional[str] = None) -> Dict[str, Any]:
         str(cwd / "radio.json")
     ])
     
-    search_paths.append(str(get_packaged_config_path()))
+    search_paths.append(str(_get_packaged_config_path()))
     
     info["search_paths"] = search_paths
     
@@ -627,8 +448,23 @@ def get_config_info(cli_arg: Optional[str] = None) -> Dict[str, Any]:
     return info
 
 
+# For backward compatibility, provide a simple load_config function
+def load_configuration(cli_arg: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Backward-compatible configuration loading function.
+    
+    Args:
+        cli_arg: Optional explicit path from CLI argument
+        
+    Returns:
+        dict: Loaded configuration
+    """
+    _, config = resolve_and_load_config(cli_arg)
+    return config
+
+
 if __name__ == "__main__":
-    # Test the configuration loading
+    # Test the configuration resolution
     import argparse
     
     parser = argparse.ArgumentParser(description="Test configuration resolution")
@@ -653,11 +489,11 @@ if __name__ == "__main__":
             exists = Path(path).exists()
             print(f"  {'✓' if exists else '✗'} {path}")
     else:
-        print("Testing configuration loading...")
         try:
-            config = load_config(args.config)
-            print(f"Loaded configuration successfully")
+            path, config = resolve_and_load_config(args.config)
+            print(f"Loaded configuration from: {path}")
             print(f"Streams: {len(config.get('streams', []))}")
             print(f"Defaults: {config.get('defaults', {})}")
-        except Exception as e:
-            print(f"Error loading configuration: {e}")
+        except ConfigurationError as e:
+            print(f"Configuration error: {e}")
+            sys.exit(1)

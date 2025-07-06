@@ -1,133 +1,63 @@
 #!/usr/bin/env python3
 """
-Setup script for Radio TUI
-Checks dependencies and provides setup instructions
+Setup script for Radio TUI package
 """
 
-import sys
-import subprocess
-import shutil
+from setuptools import setup, find_packages
 import os
 
-def check_python_version():
-    """Check if Python version is 3.7+"""
-    version = sys.version_info
-    if version.major < 3 or (version.major == 3 and version.minor < 7):
-        print(f"❌ Python 3.7+ required, found {version.major}.{version.minor}")
-        return False
-    print(f"✅ Python {version.major}.{version.minor}.{version.micro}")
-    return True
+# Read the README file for long description
+readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
+if os.path.exists(readme_path):
+    with open(readme_path, 'r', encoding='utf-8') as f:
+        long_description = f.read()
+else:
+    long_description = "A Terminal User Interface for Radio Streaming"
 
-def check_ffmpeg():
-    """Check if FFmpeg is available"""
-    if shutil.which('ffplay'):
-        print("✅ FFmpeg (ffplay) is available")
-        return True
-    else:
-        print("❌ FFmpeg not found")
-        print("   Install with:")
-        print("   - macOS: brew install ffmpeg")
-        print("   - Ubuntu/Debian: sudo apt install ffmpeg")
-        print("   - Windows: Download from https://ffmpeg.org/")
-        return False
-
-def check_dependencies():
-    """Check Python dependencies"""
-    dependencies = ['requests', 'PyYAML']
-    missing = []
-    
-    for dep in dependencies:
-        try:
-            __import__(dep.lower().replace('-', '_'))
-            print(f"✅ {dep}")
-        except ImportError:
-            print(f"❌ {dep}")
-            missing.append(dep)
-    
-    return missing
-
-def install_dependencies(missing):
-    """Install missing dependencies"""
-    if not missing:
-        return True
-    
-    print(f"\nInstalling missing dependencies: {', '.join(missing)}")
-    try:
-        subprocess.check_call([
-            sys.executable, '-m', 'pip', 'install'
-        ] + missing)
-        print("✅ Dependencies installed successfully")
-        return True
-    except subprocess.CalledProcessError:
-        print("❌ Failed to install dependencies")
-        print("   Try running: pip install -r requirements.txt")
-        return False
-
-def test_curses():
-    """Test curses functionality"""
-    try:
-        import curses
-        print(f"✅ Curses library (version {curses.version.decode() if hasattr(curses.version, 'decode') else curses.version})")
-        return True
-    except ImportError:
-        print("❌ Curses library not available")
-        return False
-
-def run_demo():
-    """Ask user if they want to run the demo"""
-    response = input("\nWould you like to run the TUI demo? (y/N): ").lower().strip()
-    if response in ['y', 'yes']:
-        print("\nStarting TUI demo...")
-        try:
-            subprocess.call([sys.executable, 'demo_tui.py'])
-        except KeyboardInterrupt:
-            print("\nDemo interrupted")
-        except Exception as e:
-            print(f"Demo failed: {e}")
-
-def main():
-    """Main setup function"""
-    print("Radio TUI Setup Check")
-    print("=" * 40)
-    print()
-    
-    # Check requirements
-    checks_passed = 0
-    total_checks = 4
-    
-    if check_python_version():
-        checks_passed += 1
-    
-    if check_ffmpeg():
-        checks_passed += 1
-    
-    if test_curses():
-        checks_passed += 1
-    
-    missing_deps = check_dependencies()
-    if not missing_deps:
-        checks_passed += 1
-    
-    print(f"\nChecks passed: {checks_passed}/{total_checks}")
-    
-    if missing_deps:
-        install_choice = input(f"\nInstall missing dependencies? (y/N): ").lower().strip()
-        if install_choice in ['y', 'yes']:
-            if install_dependencies(missing_deps):
-                checks_passed += 1
-                print(f"\nAll checks passed: {checks_passed}/{total_checks}")
-    
-    if checks_passed == total_checks:
-        print("\n🎉 Setup complete! Radio TUI is ready to use.")
-        print("\nNext steps:")
-        print("1. Run demo: python demo_tui.py")
-        print("2. Configure streams in radio.json")
-        print("3. Start TUI: python radio.py")
-        
-        run_demo()
-    else:
-        print(f"\n⚠️  Setup incomplete ({checks_passed}/{total_checks} checks passed)")
-        print("Please fix the issues above before running Radio TUI")
-
-if __name__ == "__main__":
-    main()
+setup(
+    name="radio-gaga",
+    version="1.0.0",
+    description="Radio Gaga - A Terminal User Interface for Radio Streaming",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    author="sk",
+    author_email="sk@example.com", 
+    url="https://github.com/githubpoet/radio-gaga",
+    packages=find_packages(),
+    py_modules=['radio', 'config', 'tui'],
+    python_requires=">=3.7",
+    install_requires=[
+        "requests>=2.25.0",
+        "PyYAML>=5.4.0",
+        "importlib_resources>=1.3.0; python_version<'3.9'",
+    ],
+    entry_points={
+        'console_scripts': [
+            'radio-gaga=radio:main',
+        ],
+    },
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Environment :: Console :: Curses",
+        "Intended Audience :: End Users/Desktop",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: MacOS",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Topic :: Multimedia :: Sound/Audio",
+        "Topic :: Terminals",
+    ],
+    keywords="radio streaming tui terminal curses audio",
+    include_package_data=True,
+    data_files=[
+        (os.path.join('share', 'radio-gaga'), ['radio_default.yaml']),
+    ],
+    package_data={
+        '': ['*.yaml', '*.yml', '*.json', 'radio_default.yaml'],
+    },
+)

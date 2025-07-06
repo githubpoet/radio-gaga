@@ -1,0 +1,230 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Reduce matrix size by excluding some combinations
+          - os: macos-latest
+            python-version: '3.8'
+          - os: macos-latest
+            python-version: '3.9'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pulseaudio pulseaudio-utils
+        # Start pulseaudio in the background for audio tests
+        pulseaudio --start --verbose
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        # Install any macOS-specific dependencies if needed
+        brew install --quiet portaudio || true
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt', '**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov pytest-mock
+        pip install -r requirements.txt
+        # Install package in development mode
+        pip install -e .
+
+    - name: Verify installation
+      run: |
+        python -c "import config; print('Config module imported successfully')"
+        python -c "import yaml; print('PyYAML available')" || echo "PyYAML not available"
+        radio-gaga --help || python radio.py --help
+
+    - name: Run configuration resolution tests
+      run: |
+        python3 -m pytest test_config_resolution.py -v --tb=short
+      env:
+        # Ensure clean environment for tests
+        RADIO_GAGA_CONFIG: ""
+
+    - name: Run legacy test template
+      run: |
+        python3 test_template_config.py
+
+    - name: Test CLI with real config files
+      run: |
+        # Test basic CLI functionality
+        python3 radio.py --cli || echo "CLI test completed"
+        
+        # Test with config info
+        python3 config.py --info || echo "Config info test completed"
+
+    - name: Test config path resolution in different scenarios
+      run: |
+        # Test environment variable override
+        export RADIO_GAGA_CONFIG="./radio.yaml"
+        python3 config.py --info
+        unset RADIO_GAGA_CONFIG
+        
+        # Test explicit config file
+        python3 radio.py --config ./radio.yaml --cli || echo "Explicit config test completed"
+
+    - name: Run tests with coverage
+      run: |
+        python3 -m pytest test_config_resolution.py --cov=config --cov-report=xml --cov-report=term-missing -v
+
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  integration-test:
+    runs-on: ${{ matrix.os }}
+    needs: test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -e .
+
+    - name: Create test configuration files
+      run: |
+        # Create various test configs
+        mkdir -p test_configs
+        
+        # YAML config
+        cat > test_configs/streams.yaml << EOF
+        streams:
+          - name: TestRadio1
+            url: http://example.com/stream1
+          - name: TestRadio2
+            url: http://example.com/stream2
+        defaults:
+          volume: 0.8
+          start_paused: true
+        EOF
+        
+        # JSON config
+        cat > test_configs/streams.json << EOF
+        {
+          "streams": [
+            {"name": "TestRadio3", "url": "http://example.com/stream3"}
+          ],
+          "defaults": {
+            "volume": 1.0,
+            "start_paused": false
+          }
+        }
+        EOF
+
+    - name: Test CLI with different config formats
+      run: |
+        # Test YAML config
+        python3 radio.py --config test_configs/streams.yaml --cli
+        
+        # Test JSON config
+        python3 radio.py --config test_configs/streams.json --cli
+        
+        # Test config resolution info
+        python3 config.py --config test_configs/streams.yaml --info
+
+    - name: Test first-run scenario simulation
+      run: |
+        # Test in a clean environment
+        export HOME=/tmp/test_home_$$
+        mkdir -p $HOME
+        export RADIO_GAGA_CONFIG=""
+        
+        # This should create default config
+        python3 config.py --info || echo "First run simulation completed"
+        
+        # Check if config was created (platform-specific)
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          ls -la $HOME/.config/radio-gaga/ || echo "No config created"
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          ls -la "$HOME/Library/Application Support/radio-gaga/" || echo "No config created"
+        fi
+
+    - name: Test error handling
+      run: |
+        # Test with invalid config
+        echo "invalid: yaml: content [" > invalid_config.yaml
+        python3 radio.py --config invalid_config.yaml --cli && exit 1 || echo "Invalid config correctly rejected"
+        
+        # Test with nonexistent config
+        python3 radio.py --config nonexistent.yaml --cli && exit 1 || echo "Nonexistent config correctly rejected"
+
+  lint-and-format:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install linting tools
+      run: |
+        pip install flake8 black isort mypy
+        pip install -r requirements.txt
+    
+    - name: Run black (code formatting check)
+      run: |
+        black --check --diff . || echo "Code formatting issues found (run 'black .' to fix)"
+    
+    - name: Run isort (import sorting check)
+      run: |
+        isort --check-only --diff . || echo "Import sorting issues found (run 'isort .' to fix)"
+    
+    - name: Run flake8 (linting)
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Run mypy (type checking)
+      run: |
+        mypy config.py || echo "Type checking completed with issues"

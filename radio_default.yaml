@@ -1,0 +1,173 @@
+# Radio Gaga Default Configuration Template
+# ==========================================
+#
+# This file contains stream definitions and default application settings.
+# Radio Gaga supports both YAML (.yaml, .yml) and JSON (.json) formats.
+#
+# Configuration Resolution Order:
+# 1. Explicit --config CLI argument
+# 2. RADIO_GAGA_CONFIG environment variable
+# 3. Platform-specific directories:
+#    - Linux: ~/.config/radio-gaga/radio.yaml
+#    - macOS: ~/Library/Application Support/radio-gaga/radio.yaml
+#    - Windows: %APPDATA%/radio-gaga/radio.yaml
+# 4. Current directory: ./radio.yaml or ./radio.json
+# 5. Packaged defaults (this file)
+#
+# File Format: YAML (YAML Ain't Markup Language)
+# - Indentation matters (use spaces, not tabs)
+# - Lists use dashes (-) with consistent indentation
+# - Key-value pairs use colons (:) with space after
+# - Comments start with hash (#) and extend to end of line
+
+# =============================================================================
+# STREAM DEFINITIONS
+# =============================================================================
+#
+# The 'streams' section defines available radio stations.
+# Each stream is a list item with 'name' and 'url' properties.
+#
+# Structure:
+#   streams:
+#     - name: "Display Name"     # String: Name shown in TUI (required)
+#       url: "https://..."        # String: Stream URL (required)
+#
+# Notes:
+# - Stream names should be unique within the configuration
+# - URLs must be accessible HTTP/HTTPS streaming endpoints
+# - Long names are automatically truncated in the TUI interface
+# - Names are case-sensitive for CLI --play commands
+# - Special characters in names are supported
+#
+streams:
+  # NTS (NTS Radio) - London-based online radio station
+  # Known for experimental music, live shows, and diverse programming
+  - name: NTS1                                    # Primary NTS channel
+    url: https://stream-relay-geo.ntslive.net/stream
+    
+  - name: NTS2                                    # Secondary NTS channel
+    url: https://stream-relay-geo.ntslive.net/stream2
+
+  # Example streams for different genres and regions:
+  # Uncomment and modify as needed
+  
+  # BBC Radio stations (UK)
+  # - name: "BBC Radio 1"                         # Contemporary pop/rock
+  #   url: "http://stream.live.vc.bbcmedia.co.uk/bbc_radio_one"
+  # - name: "BBC Radio 6 Music"                   # Alternative music
+  #   url: "http://stream.live.vc.bbcmedia.co.uk/bbc_6music"
+  
+  # International stations
+  # - name: "KEXP"                                # Seattle-based eclectic
+  #   url: "https://kexp-mp3-128.streamguys1.com/kexp128.mp3"
+  # - name: "SomaFM Groove Salad"                 # Downtempo electronic
+  #   url: "https://ice1.somafm.com/groovesalad-256-mp3"
+  
+  # Local/Custom streams
+  # - name: "My Local Station"
+  #   url: "http://localhost:8000/stream"          # Local development stream
+  # - name: "Custom Stream"
+  #   url: "https://your-radio-station.com/live"   # Your preferred station
+
+# =============================================================================
+# DEFAULT APPLICATION SETTINGS
+# =============================================================================
+#
+# The 'defaults' section contains application-wide settings that control
+# the initial behavior and default values when Radio Gaga starts.
+#
+# All settings in this section are optional and will use built-in defaults
+# if not specified.
+#
+defaults:
+  # Volume Level
+  # ------------
+  # Sets the default audio volume for stream playback.
+  # 
+  # Type: Float (decimal number)
+  # Range: 0.0 (mute) to 1.0 (maximum volume)
+  # Default: 1.0 if not specified
+  #
+  # Examples:
+  #   volume: 0.0    # Muted
+  #   volume: 0.5    # Half volume
+  #   volume: 0.8    # 80% volume
+  #   volume: 1.0    # Full volume
+  #
+  volume: 1.0
+  
+  # Start State
+  # -----------
+  # Determines whether the application starts in a paused state or
+  # immediately begins playing the first stream.
+  #
+  # Type: Boolean (true/false)
+  # Default: true if not specified
+  #
+  # Values:
+  #   true:  Application starts paused, user must manually start playback
+  #   false: Application automatically starts playing the first stream
+  #
+  # Note: Starting paused is recommended to avoid unexpected audio playback
+  # when launching the application.
+  #
+  start_paused: true
+
+# =============================================================================
+# CONFIGURATION VALIDATION
+# =============================================================================
+#
+# Radio Gaga performs automatic validation of configuration files:
+#
+# Required Structure:
+# - Root level must be a dictionary/object
+# - 'streams' must be a list/array (can be empty)
+# - Each stream must have 'name' and 'url' string properties
+# - 'defaults' must be a dictionary/object (optional)
+#
+# Common Validation Errors:
+# - Invalid YAML/JSON syntax (indentation, quotes, commas)
+# - Missing required fields (name, url)
+# - Incorrect data types (non-string name/url, non-numeric volume)
+# - Duplicate stream names
+# - Invalid volume range (outside 0.0-1.0)
+#
+# Troubleshooting:
+# - Use 'python config.py --info' to check configuration resolution
+# - Use 'python config.py --config /path/to/config.yaml' to test specific files
+# - Check file permissions and encoding (should be UTF-8)
+# - Validate YAML syntax at https://yaml-online-parser.appspot.com/
+# - Validate JSON syntax at https://jsonlint.com/
+#
+# =============================================================================
+# PLATFORM-SPECIFIC NOTES
+# =============================================================================
+#
+# Linux (XDG-compliant):
+# - Default location: ~/.config/radio-gaga/radio.yaml
+# - Respects XDG_CONFIG_HOME environment variable
+# - Use 'mkdir -p ~/.config/radio-gaga' to create directory
+#
+# macOS:
+# - Default location: ~/Library/Application Support/radio-gaga/radio.yaml
+# - Follows Apple's Application Support directory convention
+# - Use 'mkdir -p ~/Library/Application\ Support/radio-gaga' to create
+#
+# Windows:
+# - Default location: %APPDATA%/radio-gaga/radio.yaml
+# - Typically: C:\Users\Username\AppData\Roaming\radio-gaga\radio.yaml
+# - Use 'mkdir "%APPDATA%\radio-gaga"' in Command Prompt
+# - Use 'New-Item -ItemType Directory -Force "%APPDATA%\radio-gaga"' in PowerShell
+#
+# Environment Variables:
+# - RADIO_GAGA_CONFIG: Override config file location
+# - DEBUG: Enable debug logging (set to '1')
+# - LOG_LEVEL: Set logging verbosity (DEBUG, INFO, WARNING, ERROR)
+# - UPDATE_INTERVAL: Metadata update interval in seconds
+#
+# Examples:
+#   export RADIO_GAGA_CONFIG="/custom/path/radio.yaml"
+#   DEBUG=1 python radio.py
+#   LOG_LEVEL=DEBUG UPDATE_INTERVAL=30 python radio.py
+#
+# =============================================================================
